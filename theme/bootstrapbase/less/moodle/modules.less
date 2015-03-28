@@ -749,3 +749,21 @@ div#dock {
         white-space: nowrap;
     }
 }
+
+// Status icons
+.status {
+    .border-radius(50%);
+    display: inline-block;
+    height: 8px;
+    position: relative;
+    top: -1px;
+    width: 8px;
+
+    &.status-online {
+        background-color: @successText;
+    }
+
+    &.status-offline {
+        background-color: @grayLight;
+    }
+}
