@@ -3276,6 +3276,93 @@ EOD;
     }
 
     /**
+     * Construct the message tray, returning HTML that can be echoed out by a
+     * layout file.
+     *
+     * @param stdClass $user A user object, usually $USER.
+     * @return string HTML fragment.
+     */
+    public function message_tray($user = null) {
+        global $USER, $CFG, $DB;
+
+        if (is_null($user)) {
+            $user = $USER;
+        }
+
+        $returnstr = '';
+
+        // If during initial install, return the empty return string.
+        if (during_initial_install()) {
+            return $returnstr;
+        }
+
+        // If not logged in, return the empty return string.
+        if (!isloggedin()) {
+            return $returnstr;
+        }
+
+        // If logged in as a guest user, return the empty return string.
+        if (isguestuser()) {
+            return $returnstr;
+        }
+
+        // Check if messaging is enabled.
+        if (!$CFG->messaging) {
+            return $returnstr;
+        }
+
+        // Get message tray messages.
+        $messages = message_tray_get_messages();
+
+        foreach ($messages as $message) {
+            $image = html_writer::empty_tag('img', array('alt' => $message['name'], 'class' => 'media-object', 'src' => $message['img']));
+            $image = html_writer::tag('div', $image, array('class' => 'pull-left'));
+
+            $content = html_writer::tag('span', '', array('class' => $message['online'] ? 'status status-online' : 'status status-offline'));
+            $content .= ' ' . $message['name'];
+            $content = html_writer::tag('h4', $content, array('class' => 'media-heading'));
+            $content .= html_writer::tag('p', $message['message']);
+            $content .= html_writer::tag('small', $message['date'], array('class' => 'muted'));
+            $content = html_writer::tag('div', $content, array('class' => 'media-body'));
+
+            $media = $image . $content;
+            $media = html_writer::tag('a', $media, array('href' => '#'));
+            $media = html_writer::tag('li', $media, array('class' => $message['read'] ? 'media' : 'media active'));
+
+            $returnstr .= $media;
+        }
+
+        $returnstr = html_writer::tag('ul', $returnstr, array('class' => 'media-list'));
+        $returnstr = html_writer::tag('li', $returnstr);
+
+        $dropdownheader = html_writer::tag('li', get_string('messages', 'message'), array('class' => 'dropdown-header'));
+
+        $returnstr = $dropdownheader . $returnstr;
+
+        $dropdownfooter = html_writer::tag('a', get_string('gotomessages', 'message'), array('href' => $CFG->wwwroot.'/message/index.php'));
+        $dropdownfooter = html_writer::tag('li', $dropdownfooter, array('class' => 'dropdown-footer'));
+
+        $returnstr .= $dropdownfooter;
+
+        $returnstr = html_writer::tag('ul', $returnstr, array('class' => 'dropdown-menu'));
+
+        $dropdowntoggle = $this->pix_icon('t/message', get_string('messages', 'message'), 'moodle', array('class' => 'iconsmall'));
+
+        // Check notification count.
+        if ($countunread = message_count_unread_messages()) {
+            $dropdowntoggle .= html_writer::tag('span', $countunread, array('class' => 'badge badge-important'));
+        }
+
+        $dropdowntoggle = html_writer::tag('a', $dropdowntoggle, array('class' => 'dropdown-toggle', 'data-toggle' => 'dropdown', 'href' => '#'));
+
+        $returnstr = $dropdowntoggle . $returnstr;
+        $returnstr = html_writer::tag('li', $returnstr, array('class' => 'dropdown'));
+        $returnstr = html_writer::tag('ul', $returnstr, array('class' => 'nav pull-right', 'id' => 'message-tray'));
+
+        return $returnstr;
+    }
+
+    /**
      * Return the navbar content so that it can be echoed out by the layout
      *
      * @return string XHTML navbar
