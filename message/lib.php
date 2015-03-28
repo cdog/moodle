@@ -2718,3 +2718,30 @@ function message_messenger_sendmessage_link_params($user) {
         'role' => 'button'
     );
 }
+
+/**
+ * Returns the current user's recent messages.
+ * TODO: pull data from Moodle.
+ *
+ * @param integer $limit Used to contrain the number of mesages returned.
+ * @return array Array of user's messages.
+ */
+function message_tray_get_messages($limit = 10) {
+    $users = json_decode(file_get_contents(sprintf('http://api.randomuser.me/?results=%d', $limit)));
+    $messages = array();
+
+    foreach ($users->results as $i => $result) {
+        $message = file_get_contents('http://www.iheartquotes.com/api/v1/random?max_lines=1&show_permalink=false&show_source=false');
+
+        $messages[] = array(
+            'read' => $i >= message_count_unread_messages(),
+            'img' => $result->user->picture->thumbnail,
+            'name' => ucwords($result->user->name->first . ' ' .$result->user->name->last),
+            'message' => $message,
+            'date' => date('M d'),
+            'online' => rand(0, 1) == 1
+        );
+    }
+
+    return $messages;
+}
